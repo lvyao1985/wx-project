@@ -1,0 +1,12 @@
+gunicorn
+flask
+eventlet
+flask-socketio
+pymysql
+peewee
+redis
+qiniu
+ipgetter
+requests
+xmltodict
+celery>=4.0,<5.0
