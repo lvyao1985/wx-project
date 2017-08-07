@@ -19,4 +19,4 @@ bp_www_api.before_request(before_api_request)
 bp_www_api.before_request(wx_user_authentication)
 
 
-from . import weixin
+from . import weixin, user
