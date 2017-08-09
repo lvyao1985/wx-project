@@ -2,20 +2,20 @@
 
     FLASK_CONFIG [development|testing|production] (default: development)
     DES_KEY (8 bytes)
-    REDIS_HOST (default: localhost)
+    REDIS_HOST (default: 127.0.0.1)
     REDIS_PORT (default: 6379)
     REDIS_DB (default: 0)
-    FLASK_MYSQL_HOST (default: localhost)
+    FLASK_MYSQL_HOST (default: 127.0.0.1)
     FLASK_MYSQL_PORT (default: 3306)
     FLASK_MYSQL_USER
     FLASK_MYSQL_PASSWORD
     FLASK_MYSQL_DB (default: *)
     CELERY_BROKER_USER
     CELERY_BROKER_PASSWORD
-    CELERY_BROKER_HOST (default: localhost)
+    CELERY_BROKER_HOST (default: 127.0.0.1)
     CELERY_BROKER_PORT (default: 5672)
     CELERY_BROKER_VHOST (default: *)
-    CELERY_BACKEND_HOST (default: localhost)
+    CELERY_BACKEND_HOST (default: 127.0.0.1)
     CELERY_BACKEND_PORT (default: 6379)
     CELERY_BACKEND_DB (default: 0)
     QINIU_ACCESS_KEY
@@ -123,6 +123,7 @@
         1401, 1402, 1803, 1850, 1851
 
 **获取当前微信用户详情**
+_(login_required)_
 
     GET  /api/current_user/
 

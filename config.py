@@ -14,7 +14,7 @@ class Config(object):
     # mysql
     MYSQL = {
         'charset': 'utf8mb4',
-        'host': environ.get('FLASK_MYSQL_HOST') or 'localhost',
+        'host': environ.get('FLASK_MYSQL_HOST') or '127.0.0.1',
         'port': int(environ.get('FLASK_MYSQL_PORT') or 3306),
         'user': environ.get('FLASK_MYSQL_USER'),
         'password': environ.get('FLASK_MYSQL_PASSWORD'),
@@ -24,10 +24,10 @@ class Config(object):
     # celery
     BROKER_URL = 'amqp://%s:%s@%s:%s/%s' % (environ.get('CELERY_BROKER_USER'),
                                             environ.get('CELERY_BROKER_PASSWORD'),
-                                            environ.get('CELERY_BROKER_HOST') or 'localhost',
+                                            environ.get('CELERY_BROKER_HOST') or '127.0.0.1',
                                             environ.get('CELERY_BROKER_PORT') or 5672,
                                             environ.get('CELERY_BROKER_VHOST') or _project_name)
-    CELERY_RESULT_BACKEND = 'redis://%s:%s/%s' % (environ.get('CELERY_BACKEND_HOST') or 'localhost',
+    CELERY_RESULT_BACKEND = 'redis://%s:%s/%s' % (environ.get('CELERY_BACKEND_HOST') or '127.0.0.1',
                                                   environ.get('CELERY_BACKEND_PORT') or 6379,
                                                   environ.get('CELERY_BACKEND_DB') or 0)
     CELERY_ACCEPT_CONTENT = ['pickle']

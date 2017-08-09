@@ -16,13 +16,13 @@ def is_alphabet(ustr):
     return bool(ustr)
 
 
-def check_phone(phone):
+def check_mobile(mobile):
     """
     检查手机号码格式是否正确
-    :param phone:
+    :param mobile:
     :return:
     """
-    return bool(re.match(r'1[34578]\d{9}$', phone))
+    return bool(re.match(r'1[34578]\d{9}$', mobile))
 
 
 def check_email(email):

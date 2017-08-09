@@ -197,7 +197,7 @@ class Admin(BaseModel):
     """
     name = CharField(max_length=32, unique=True)  # 用户名
     password = CharField()  # 密码
-    phone = CharField(null=True)  # 手机号码
+    mobile = CharField(null=True)  # 手机号码
     openid = CharField(null=True)  # 微信服务号openid
     last_login_time = DateTimeField(null=True)  # 最近登录时间
     last_login_ip = CharField(null=True)  # 最近登录IP
@@ -228,12 +228,12 @@ class Admin(BaseModel):
             return admin
 
     @classmethod
-    def create_admin(cls, name, password, phone=None, openid=None, authority=0):
+    def create_admin(cls, name, password, mobile=None, openid=None, authority=0):
         """
         创建管理员
         :param name:
         :param password:
-        :param phone:
+        :param mobile:
         :param openid:
         :param authority:
         :return:
@@ -242,7 +242,7 @@ class Admin(BaseModel):
             return cls.create(
                 name=name.strip(),
                 password=generate_password_hash(password),
-                phone=_nullable_strip(phone),
+                mobile=_nullable_strip(mobile),
                 openid=_nullable_strip(openid),
                 authority=authority
             )

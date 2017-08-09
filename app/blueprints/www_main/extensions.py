@@ -117,5 +117,5 @@ def wx_pay_notify():
     wx_pay_order = WXPayOrder.query_by_out_trade_no(out_trade_no)
     if wx_pay_order and not wx_pay_order.notify_result_code:
         wx_pay_order.update_notify_result(result)
-        # TODO: 业务逻辑A
+        # TODO: 微信支付业务逻辑A'
     return make_response(template.render(return_code='SUCCESS'))
