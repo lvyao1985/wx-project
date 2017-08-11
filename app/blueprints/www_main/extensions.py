@@ -59,7 +59,7 @@ def wx_user_login():
     if not wx_user:
         return resp
 
-    resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid), max_age=86400 * WX_USER_LOGIN_VALID_DAYS)
+    resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400 * WX_USER_LOGIN_VALID_DAYS)
     return resp
 
 

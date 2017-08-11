@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import time
 import json
 import hashlib
@@ -8,6 +9,9 @@ import requests
 
 from .key_util import generate_random_key
 from .redis_util import redis_client
+
+
+VERIFY = os.getenv('CA_CERTS_PATH') or False
 
 
 def get_access_token(wx):
@@ -31,7 +35,7 @@ def get_access_token(wx):
         'appid': app_id,
         'secret': app_secret
     }
-    resp_json = requests.get(wx_url, params=params).json()
+    resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
     access_token, expires_in = map(resp_json.get, ('access_token', 'expires_in'))
     if not (access_token and expires_in):
         return
@@ -65,7 +69,7 @@ def get_jsapi_ticket(wx):
         'access_token': access_token,
         'type': 'jsapi'
     }
-    resp_json = requests.get(wx_url, params=params).json()
+    resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
     jsapi_ticket, expires_in = map(resp_json.get, ('ticket', 'expires_in'))
     if not (jsapi_ticket and expires_in):
         return
@@ -92,7 +96,7 @@ def get_user_info(wx, openid):
         'openid': openid,
         'lang': 'zh_CN'
     }
-    resp = requests.get(wx_url, params=params)
+    resp = requests.get(wx_url, params=params, verify=VERIFY)
     resp.encoding = 'utf-8'
     info = resp.json()
     if not info.get('errcode'):
@@ -118,7 +122,7 @@ def get_user_info_with_authorization(wx, code):
         'code': code,
         'grant_type': 'authorization_code'
     }
-    resp_json = requests.get(wx_url, params=params).json()
+    resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
     access_token, openid, refresh_token = map(resp_json.get, ('access_token', 'openid', 'refresh_token'))
     if not (access_token and openid):
         return
@@ -129,7 +133,7 @@ def get_user_info_with_authorization(wx, code):
     #     'access_token': access_token,
     #     'openid': openid
     # }
-    # resp_json = requests.get(wx_url, params=params).json()
+    # resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
     # if resp_json.get('errcode'):
     #     if not refresh_token:
     #         return
@@ -141,7 +145,7 @@ def get_user_info_with_authorization(wx, code):
     #         'grant_type': 'refresh_token',
     #         'refresh_token': refresh_token
     #     }
-    #     resp_json = requests.get(wx_url, params=params).json()
+    #     resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
     #     access_token, openid = map(resp_json.get, ('access_token', 'openid'))
     #     if not (access_token and openid):
     #         return
@@ -153,7 +157,7 @@ def get_user_info_with_authorization(wx, code):
         'openid': openid,
         'lang': 'zh_CN'
     }
-    resp = requests.get(wx_url, params=params)
+    resp = requests.get(wx_url, params=params, verify=VERIFY)
     resp.encoding = 'utf-8'
     info = resp.json()
     if not info.get('errcode'):
@@ -176,7 +180,7 @@ def get_temp_image_media(wx, media_id):
         'access_token': access_token,
         'media_id': media_id
     }
-    resp = requests.get(wx_url, params=params)
+    resp = requests.get(wx_url, params=params, verify=VERIFY)
     content_type = resp.headers.get('Content-Type')
     if content_type and content_type.startswith('image/'):
         return resp.content
@@ -204,7 +208,7 @@ def send_custom_message(wx, openid, msg_type, msg_data):
         'msgtype': str(msg_type),
         str(msg_type): msg_data
     }
-    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False)).json()
+    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
 
 
 def send_template_message(wx, openid, template_id, msg_data, url=None, miniprogram=None):
@@ -235,7 +239,7 @@ def send_template_message(wx, openid, template_id, msg_data, url=None, miniprogr
         data['url'] = str(url)
     if miniprogram:
         data['miniprogram'] = miniprogram
-    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False)).json()
+    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
 
 
 def create_menu(wx, buttons):
@@ -256,7 +260,7 @@ def create_menu(wx, buttons):
     data = {
         'button': buttons
     }
-    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False)).json()
+    return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
 
 
 def generate_qrcode_with_scene(wx, action, scene, expires=30):
@@ -285,7 +289,7 @@ def generate_qrcode_with_scene(wx, action, scene, expires=30):
     }
     if not action.startswith('QR_LIMIT_'):
         data['expire_seconds'] = int(expires)
-    resp_json = requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False)).json()
+    resp_json = requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
     ticket = resp_json.get('ticket')
     if not ticket:
         return
@@ -294,7 +298,7 @@ def generate_qrcode_with_scene(wx, action, scene, expires=30):
     params = {
         'ticket': ticket
     }
-    resp = requests.get(wx_url, params=params)
+    resp = requests.get(wx_url, params=params, verify=VERIFY)
     content_type = resp.headers.get('Content-Type')
     if content_type and content_type.startswith('image/'):
         return resp.content
