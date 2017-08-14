@@ -20,4 +20,5 @@
     <product_id><![CDATA[{{ product_id | d('', true) }}]]></product_id>
     <limit_pay><![CDATA[{{ limit_pay | d('', true) }}]]></limit_pay>
     <openid><![CDATA[{{ openid | d('', true) }}]]></openid>
+    <scene_info><![CDATA[{{ scene_info | d('', true) }}]]></scene_info>
 </xml>

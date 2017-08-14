@@ -116,6 +116,10 @@ def wx_pay_notify():
 
     wx_pay_order = WXPayOrder.query_by_out_trade_no(out_trade_no)
     if wx_pay_order and not wx_pay_order.notify_result_code:
-        wx_pay_order.update_notify_result(result)
-        # TODO: 微信支付业务逻辑A'
+        if wx_pay_order.total_fee != int(result['total_fee']):
+            current_app.logger.error(u'微信支付结果通知订单金额不一致')
+            current_app.logger.info(request.data)
+        else:
+            wx_pay_order.update_notify_result(result)
+            # TODO: 微信支付业务逻辑A'
     return make_response(template.render(return_code='SUCCESS'))

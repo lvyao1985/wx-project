@@ -13,5 +13,7 @@
     <fee_type><![CDATA[{{ fee_type | d('', true) }}]]></fee_type>
     <spbill_create_ip><![CDATA[{{ spbill_create_ip }}]]></spbill_create_ip>
     <goods_tag><![CDATA[{{ goods_tag | d('', true) }}]]></goods_tag>
+    <limit_pay><![CDATA[{{ limit_pay | d('', true) }}]]></limit_pay>
     <auth_code><![CDATA[{{ auth_code }}]]></auth_code>
+    <scene_info><![CDATA[{{ scene_info | d('', true) }}]]></scene_info>
 </xml>

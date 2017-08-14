@@ -7,7 +7,12 @@ import requests
 import xmltodict
 
 from utils.key_util import generate_random_key
-from utils.weixin_util import generate_pay_sign
+from utils.weixin_util import VERIFY, generate_pay_sign
+
+
+_HEADERS = {
+    'Content-Type': 'application/xml; charset="utf-8"'
+}
 
 
 def place_order(order):
@@ -24,20 +29,20 @@ def place_order(order):
         wx_url = 'https://api.mch.weixin.qq.com/pay/micropay'
         template = 'weixin/pay/micropay_order.xml'
         params = order.to_dict(only=('device_info', 'body', 'detail', 'attach', 'out_trade_no', 'total_fee', 'fee_type',
-                                     'spbill_create_ip', 'goods_tag', 'auth_code'))
+                                     'spbill_create_ip', 'goods_tag', 'limit_pay', 'auth_code', 'scene_info'))
     else:
         wx_url = 'https://api.mch.weixin.qq.com/pay/unifiedorder'
         template = 'weixin/pay/unified_order.xml'
         params = order.to_dict(only=('device_info', 'body', 'detail', 'attach', 'out_trade_no', 'fee_type', 'total_fee',
                                      'spbill_create_ip', 'time_start', 'time_expire', 'goods_tag', 'trade_type',
-                                     'product_id', 'limit_pay', 'openid'))
+                                     'product_id', 'limit_pay', 'openid', 'scene_info'))
         params['notify_url'] = url_for('bp_www_main.wx_pay_notify', _external=True)
-    params['appid'] = wx.get('app_id')
-    params['mch_id'] = wx.get('mch_id')
+    params['appid'] = wx['app_id']
+    params['mch_id'] = wx['mch_id']
     params['nonce_str'] = generate_random_key(16)
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'})
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -59,14 +64,14 @@ def query_order(order):
     wx_url = 'https://api.mch.weixin.qq.com/pay/orderquery'
     template = 'weixin/pay/order_query.xml'
     params = {
-        'appid': wx.get('app_id'),
-        'mch_id': wx.get('mch_id'),
+        'appid': wx['app_id'],
+        'mch_id': wx['mch_id'],
         'out_trade_no': order.out_trade_no,
         'nonce_str': generate_random_key(16)
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'})
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -88,19 +93,20 @@ def cancel_order(order):
     if order.trade_type == 'MICROPAY':
         wx_url = 'https://api.mch.weixin.qq.com/secapi/pay/reverse'
         template = 'weixin/pay/micropay_order_reverse.xml'
+        cert = (wx['cert_path'], wx['key_path'])
     else:
         wx_url = 'https://api.mch.weixin.qq.com/pay/closeorder'
         template = 'weixin/pay/unified_order_close.xml'
+        cert = None
     params = {
-        'appid': wx.get('app_id'),
-        'mch_id': wx.get('mch_id'),
+        'appid': wx['app_id'],
+        'mch_id': wx['mch_id'],
         'out_trade_no': order.out_trade_no,
         'nonce_str': generate_random_key(16)
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -155,8 +161,7 @@ def apply_for_refund(refund):
     params['total_fee'] = refund.wx_pay_order.total_fee
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -186,7 +191,7 @@ def query_refund(refund):
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'})
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -234,8 +239,7 @@ def apply_for_mch_pay(pay):
     params['nonce_str'] = generate_random_key(16)
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -263,8 +267,7 @@ def query_mch_pay(pay):
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -313,8 +316,7 @@ def send_red_pack(pack):
     params['wxappid'] = wx.get('app_id')
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -343,8 +345,7 @@ def query_red_pack(pack):
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers={'Content-Type': 'application/xml; charset="utf-8"'},
-                         cert=(wx.get('cert_path'), wx.get('key_path')))
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']

@@ -426,10 +426,20 @@ class WXPayOrder(BaseModel):
     微信支付订单
     """
     TRADE_TYPE_CHOICES = (
-        ('JSAPI', u'公众号支付'),
+        ('JSAPI', u'公众号支付/小程序支付'),
+        ('MWEB', u'H5支付'),
         ('NATIVE', u'原生扫码支付'),
         ('APP', u'APP支付'),
         ('MICROPAY', u'刷卡支付')
+    )
+    TRADE_STATE_CHOICES = (
+        ('NOTPAY', u'未支付'),
+        ('SUCCESS', u'支付成功'),
+        ('REFUND', u'转入退款'),
+        ('USERPAYING', u'用户支付中'),
+        ('PAYERROR', u'支付失败'),
+        ('CLOSED', u'已关闭'),
+        ('REVOKED', u'已撤销')
     )
     body = CharField()
     out_trade_no = CharField(max_length=32, unique=True)
@@ -446,11 +456,13 @@ class WXPayOrder(BaseModel):
     product_id = CharField(null=True)
     limit_pay = CharField(null=True)
     openid = CharField(null=True)
+    scene_info = TextField(null=True)
     auth_code = CharField(null=True)
 
     order_result = TextField(null=True)  # 统一下单/提交刷卡支付响应结果
     order_result_code = CharField(null=True)
     prepay_id = CharField(null=True)
+    mweb_url = CharField(null=True)
     code_url = CharField(null=True)
     transaction_id = CharField(null=True)
 
@@ -459,7 +471,7 @@ class WXPayOrder(BaseModel):
 
     query_result = TextField(null=True)  # 查询订单响应结果
     query_result_code = CharField(null=True)
-    trade_state = CharField(null=True)
+    trade_state = CharField(null=True, choices=TRADE_STATE_CHOICES)
     trade_state_desc = CharField(null=True)
 
     cancel_result = TextField(null=True)  # 关闭/撤销订单响应结果
@@ -494,7 +506,7 @@ class WXPayOrder(BaseModel):
     @classmethod
     def create_wx_pay_order(cls, body, total_fee, spbill_create_ip, trade_type, device_info=None, detail=None,
                             attach=None, fee_type=None, time_start=None, time_expire=None, goods_tag=None,
-                            product_id=None, limit_pay=None, openid=None, auth_code=None):
+                            product_id=None, limit_pay=None, openid=None, scene_info=None, auth_code=None):
         """
         创建微信支付订单
         :param body:
@@ -511,6 +523,7 @@ class WXPayOrder(BaseModel):
         :param product_id:
         :param limit_pay:
         :param openid:
+        :param scene_info:
         :param auth_code:
         :return:
         """
@@ -531,6 +544,7 @@ class WXPayOrder(BaseModel):
                 product_id=_nullable_strip(product_id),
                 limit_pay=_nullable_strip(limit_pay),
                 openid=_nullable_strip(openid),
+                scene_info=_nullable_strip(scene_info),
                 auth_code=_nullable_strip(auth_code)
             )
 
@@ -548,6 +562,7 @@ class WXPayOrder(BaseModel):
             self.order_result_code = result.get('result_code')
             if self.order_result_code == 'SUCCESS':
                 self.prepay_id = _nullable_strip(result.get('prepay_id'))
+                self.mweb_url = _nullable_strip(result.get('mweb_url'))
                 self.code_url = _nullable_strip(result.get('code_url'))
                 self.transaction_id = _nullable_strip(result.get('transaction_id'))
             self.update_time = datetime.datetime.now()
@@ -566,7 +581,7 @@ class WXPayOrder(BaseModel):
         try:
             self.notify_result = repr(result) if result else None
             self.notify_result_code = result.get('result_code')
-            self.transaction_id = result.get('transaction_id')
+            self.transaction_id = _nullable_strip(result.get('transaction_id'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -603,7 +618,7 @@ class WXPayOrder(BaseModel):
         try:
             self.cancel_result = repr(result) if result else None
             self.cancel_result_code = result.get('result_code')
-            self.recall = result.get('recall')
+            self.recall = _nullable_strip(result.get('recall'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -990,4 +1005,4 @@ class WXRedPack(BaseModel):
         return eval(self.query_result) if self.query_result else {}
 
 
-models = [Admin, WXUser]
+models = [Admin, WXUser, WXPayOrder]
