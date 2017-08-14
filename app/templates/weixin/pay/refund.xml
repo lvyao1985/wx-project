@@ -1,7 +1,6 @@
 <xml>
     <appid><![CDATA[{{ appid }}]]></appid>
     <mch_id><![CDATA[{{ mch_id }}]]></mch_id>
-    <device_info><![CDATA[{{ device_info | d('', true) }}]]></device_info>
     <nonce_str><![CDATA[{{ nonce_str }}]]></nonce_str>
     <sign><![CDATA[{{ sign }}]]></sign>
     <sign_type><![CDATA[{{ sign_type | d('', true) }}]]></sign_type>
@@ -11,6 +10,6 @@
     <total_fee>{{ total_fee }}</total_fee>
     <refund_fee>{{ refund_fee }}</refund_fee>
     <refund_fee_type><![CDATA[{{ refund_fee_type | d('', true) }}]]></refund_fee_type>
-    <op_user_id><![CDATA[{{ op_user_id }}]]></op_user_id>
+    <refund_desc><![CDATA[{{ refund_desc | d('', true) }}]]></refund_desc>
     <refund_account><![CDATA[{{ refund_account | d('', true) }}]]></refund_account>
 </xml>

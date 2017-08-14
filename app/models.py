@@ -643,11 +643,18 @@ class WXPayRefund(BaseModel):
     """
     微信支付退款
     """
+    REFUND_STATUS_CHOICES = (
+        ('PROCESSING', u'退款处理中'),
+        ('SUCCESS', u'退款成功'),
+        ('CHANGE', u'退款异常'),
+        ('FAIL', u'退款失败'),
+        ('REFUNDCLOSE', u'退款关闭')
+    )
     wx_pay_order = ForeignKeyField(WXPayOrder, on_delete='CASCADE')
     out_refund_no = CharField(max_length=32, unique=True)
     refund_fee = IntegerField()
-    op_user_id = CharField()
     refund_fee_type = CharField(null=True)
+    refund_desc = CharField(null=True)
     refund_account = CharField(null=True)
 
     refund_result = TextField(null=True)  # 申请退款响应结果
@@ -656,7 +663,7 @@ class WXPayRefund(BaseModel):
 
     query_result = TextField(null=True)  # 查询退款响应结果
     query_result_code = CharField(null=True)
-    refund_status = CharField(null=True)
+    refund_status = CharField(null=True, choices=REFUND_STATUS_CHOICES)
 
     class Meta:
         db_table = 'wx_pay_refund'
@@ -683,13 +690,13 @@ class WXPayRefund(BaseModel):
             return refund
 
     @classmethod
-    def create_wx_pay_refund(cls, wx_pay_order, refund_fee, op_user_id, refund_fee_type=None, refund_account=None):
+    def create_wx_pay_refund(cls, wx_pay_order, refund_fee, refund_fee_type=None, refund_desc=None, refund_account=None):
         """
         创建微信支付退款
         :param wx_pay_order:
         :param refund_fee:
-        :param op_user_id:
         :param refund_fee_type:
+        :param refund_desc:
         :param refund_account:
         :return:
         """
@@ -698,8 +705,8 @@ class WXPayRefund(BaseModel):
                 wx_pay_order=wx_pay_order,
                 out_refund_no=generate_random_key(28, wx_pay_order.out_trade_no, 'd'),
                 refund_fee=refund_fee,
-                op_user_id=op_user_id.strip(),
                 refund_fee_type=_nullable_strip(refund_fee_type),
+                refund_desc=_nullable_strip(refund_desc),
                 refund_account=_nullable_strip(refund_account)
             )
 
@@ -715,7 +722,7 @@ class WXPayRefund(BaseModel):
         try:
             self.refund_result = repr(result) if result else None
             self.refund_result_code = result.get('result_code')
-            self.refund_id = result.get('refund_id')
+            self.refund_id = _nullable_strip(result.get('refund_id'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -733,7 +740,7 @@ class WXPayRefund(BaseModel):
             index = result.keys()[result.values().index(self.out_refund_no)].split('_')[-1]
             self.query_result = repr(result) if result else None
             self.query_result_code = result.get('result_code')
-            self.refund_status = result.get('refund_status_%s' % index)
+            self.refund_status = _nullable_strip(result.get('refund_status_%s' % index))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -1005,4 +1012,4 @@ class WXRedPack(BaseModel):
         return eval(self.query_result) if self.query_result else {}
 
 
-models = [Admin, WXUser, WXPayOrder]
+models = [Admin, WXUser, WXPayOrder, WXPayRefund]

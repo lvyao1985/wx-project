@@ -146,22 +146,22 @@ def apply_for_refund(refund):
     :param refund:
     :return:
     """
-    if refund.refund_status in ['SUCCESS', 'PROCESSING', 'CHANGE']:
+    if refund.refund_status in ['PROCESSING', 'SUCCESS', 'CHANGE']:
         return
 
     wx = current_app.config['WEIXIN']
     wx_url = 'https://api.mch.weixin.qq.com/secapi/pay/refund'
     template = 'weixin/pay/refund.xml'
-    params = refund.to_dict(only=('out_refund_no', 'refund_fee', 'refund_fee_type', 'op_user_id', 'refund_account'))
-    params['appid'] = wx.get('app_id')
-    params['mch_id'] = wx.get('mch_id')
-    params['device_info'] = refund.wx_pay_order.device_info
+    params = refund.to_dict(only=('out_refund_no', 'refund_fee', 'refund_fee_type', 'refund_desc', 'refund_account'))
+    params['appid'] = wx['app_id']
+    params['mch_id'] = wx['mch_id']
     params['nonce_str'] = generate_random_key(16)
     params['out_trade_no'] = refund.wx_pay_order.out_trade_no
     params['total_fee'] = refund.wx_pay_order.total_fee
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
+    cert = (wx['cert_path'], wx['key_path'])
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -183,9 +183,8 @@ def query_refund(refund):
     wx_url = 'https://api.mch.weixin.qq.com/pay/refundquery'
     template = 'weixin/pay/refund_query.xml'
     params = {
-        'appid': wx.get('app_id'),
-        'mch_id': wx.get('mch_id'),
-        'device_info': refund.wx_pay_order.device_info,
+        'appid': wx['app_id'],
+        'mch_id': wx['mch_id'],
         'nonce_str': generate_random_key(16),
         'out_refund_no': refund.out_refund_no
     }
@@ -215,7 +214,7 @@ def update_refund_state(refund):
         query_order(refund.wx_pay_order)
     elif status != 'PROCESSING':
         current_app.logger.error(u'微信支付申请退款失败')
-        if status == 'FAIL':
+        if status in ['FAIL', 'REFUNDCLOSE']:
             apply_for_refund(refund)
     # TODO: 微信支付业务逻辑B
 
@@ -234,12 +233,13 @@ def apply_for_mch_pay(pay):
     template = 'weixin/pay/mch_pay.xml'
     params = pay.to_dict(only=('device_info', 'partner_trade_no', 'openid', 'check_name', 're_user_name', 'amount',
                                'desc', 'spbill_create_ip'))
-    params['mch_appid'] = wx.get('app_id')
-    params['mchid'] = wx.get('mch_id')
+    params['mch_appid'] = wx['app_id']
+    params['mchid'] = wx['mch_id']
     params['nonce_str'] = generate_random_key(16)
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
+    cert = (wx['cert_path'], wx['key_path'])
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -262,12 +262,13 @@ def query_mch_pay(pay):
     params = {
         'nonce_str': generate_random_key(16),
         'partner_trade_no': pay.partner_trade_no,
-        'mch_id': wx.get('mch_id'),
-        'appid': wx.get('app_id')
+        'mch_id': wx['mch_id'],
+        'appid': wx['app_id']
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
+    cert = (wx['cert_path'], wx['key_path'])
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -312,11 +313,12 @@ def send_red_pack(pack):
         params = pack.to_dict(only=('mch_billno', 'send_name', 're_openid', 'total_amount', 'total_num', 'amt_type',
                                     'wishing', 'act_name', 'remark', 'scene_id', 'risk_info', 'consume_mch_id'))
     params['nonce_str'] = generate_random_key(16)
-    params['mch_id'] = wx.get('mch_id')
-    params['wxappid'] = wx.get('app_id')
+    params['mch_id'] = wx['mch_id']
+    params['wxappid'] = wx['app_id']
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
+    cert = (wx['cert_path'], wx['key_path'])
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
@@ -339,13 +341,14 @@ def query_red_pack(pack):
     params = {
         'nonce_str': generate_random_key(16),
         'mch_billno': pack.mch_billno,
-        'mch_id': wx.get('mch_id'),
-        'appid': wx.get('app_id'),
+        'mch_id': wx['mch_id'],
+        'appid': wx['app_id'],
         'bill_type': 'MCHT'
     }
     params['sign'] = generate_pay_sign(wx, params)
     xml = current_app.jinja_env.get_template(template).render(**params)
-    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=(wx.get('cert_path'), wx.get('key_path')))
+    cert = (wx['cert_path'], wx['key_path'])
+    resp = requests.post(wx_url, data=xml.encode('utf-8'), headers=_HEADERS, verify=VERIFY, cert=cert)
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']

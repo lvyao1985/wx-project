@@ -1,7 +1,6 @@
 <xml>
     <appid><![CDATA[{{ appid }}]]></appid>
     <mch_id><![CDATA[{{ mch_id }}]]></mch_id>
-    <device_info><![CDATA[{{ device_info | d('', true) }}]]></device_info>
     <nonce_str><![CDATA[{{ nonce_str }}]]></nonce_str>
     <sign><![CDATA[{{ sign }}]]></sign>
     <sign_type><![CDATA[{{ sign_type | d('', true) }}]]></sign_type>
