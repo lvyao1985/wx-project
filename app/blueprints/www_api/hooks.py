@@ -4,7 +4,7 @@ from flask import current_app, request, g
 
 from ...models import WXUser
 from ...constants import WX_USER_COOKIE_KEY
-from utils.des import decrypt
+from utils.aes_util import decrypt
 from utils.redis_util import redis_client
 from utils.weixin_util import get_user_info
 
@@ -36,3 +36,5 @@ def wx_user_authentication():
         info = get_user_info(current_app.config['WEIXIN'], g.user.openid)
         if info:
             g.user.update_wx_user(**info)
+        else:
+            current_app.logger.error(u'微信用户基本信息获取失败')

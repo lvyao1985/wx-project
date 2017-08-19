@@ -8,7 +8,7 @@ from . import bp_cms_api
 from ...models import Admin
 from ...api_utils import *
 from ...constants import MIN_PASSWORD_LEN, MAX_PASSWORD_LEN, ADMIN_TOKEN_TAG, ADMIN_LOGIN_VALID_DAYS
-from utils.des import encrypt
+from utils.aes_util import encrypt
 
 
 @bp_cms_api.route('/admin/login/', methods=['PUT'])

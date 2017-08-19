@@ -647,7 +647,6 @@ class WXPayRefund(BaseModel):
         ('PROCESSING', u'退款处理中'),
         ('SUCCESS', u'退款成功'),
         ('CHANGE', u'退款异常'),
-        ('FAIL', u'退款失败'),
         ('REFUNDCLOSE', u'退款关闭')
     )
     wx_pay_order = ForeignKeyField(WXPayOrder, on_delete='CASCADE')
@@ -661,20 +660,22 @@ class WXPayRefund(BaseModel):
     refund_result_code = CharField(null=True)
     refund_id = CharField(null=True)
 
+    notify_result = TextField(null=True)  # 退款结果通知
+    refund_status = CharField(null=True, choices=REFUND_STATUS_CHOICES)
+
     query_result = TextField(null=True)  # 查询退款响应结果
     query_result_code = CharField(null=True)
-    refund_status = CharField(null=True, choices=REFUND_STATUS_CHOICES)
 
     class Meta:
         db_table = 'wx_pay_refund'
 
     @classmethod
     def _exclude_fields(cls):
-        return BaseModel._exclude_fields() | {'refund_result', 'query_result'}
+        return BaseModel._exclude_fields() | {'refund_result', 'notify_result', 'query_result'}
 
     @classmethod
     def _extra_attributes(cls):
-        return BaseModel._extra_attributes() | {'dict_refund_result', 'dict_query_result'}
+        return BaseModel._extra_attributes() | {'dict_refund_result', 'dict_notify_result', 'dict_query_result'}
 
     @classmethod
     def query_by_out_refund_no(cls, out_refund_no):
@@ -703,7 +704,7 @@ class WXPayRefund(BaseModel):
         try:
             return cls.create(
                 wx_pay_order=wx_pay_order,
-                out_refund_no=generate_random_key(28, wx_pay_order.out_trade_no, 'd'),
+                out_refund_no=generate_random_key(32, wx_pay_order.out_trade_no, 'd'),
                 refund_fee=refund_fee,
                 refund_fee_type=_nullable_strip(refund_fee_type),
                 refund_desc=_nullable_strip(refund_desc),
@@ -723,6 +724,22 @@ class WXPayRefund(BaseModel):
             self.refund_result = repr(result) if result else None
             self.refund_result_code = result.get('result_code')
             self.refund_id = _nullable_strip(result.get('refund_id'))
+            self.update_time = datetime.datetime.now()
+            self.save()
+            return self
+
+        except Exception, e:
+            current_app.logger.error(e)
+
+    def update_notify_result(self, result):
+        """
+        更新退款结果通知
+        :param result: [dict]
+        :return:
+        """
+        try:
+            self.notify_result = repr(result) if result else None
+            self.refund_status = _nullable_strip(result.get('refund_status'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -750,6 +767,9 @@ class WXPayRefund(BaseModel):
 
     def dict_refund_result(self):
         return eval(self.refund_result) if self.refund_result else {}
+
+    def dict_notify_result(self):
+        return eval(self.notify_result) if self.notify_result else {}
 
     def dict_query_result(self):
         return eval(self.query_result) if self.query_result else {}

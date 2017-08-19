@@ -137,7 +137,7 @@ def update_order_state(order):
             query_order(order)
         else:
             current_app.logger.error(u'微信支付关闭/撤销订单失败')
-    # TODO: 微信支付业务逻辑A
+    # TODO: 微信支付业务逻辑A'
 
 
 def apply_for_refund(refund):
@@ -214,9 +214,9 @@ def update_refund_state(refund):
         query_order(refund.wx_pay_order)
     elif status != 'PROCESSING':
         current_app.logger.error(u'微信支付申请退款失败')
-        if status in ['FAIL', 'REFUNDCLOSE']:
+        if status != 'CHANGE':
             apply_for_refund(refund)
-    # TODO: 微信支付业务逻辑B
+    # TODO: 微信支付退款业务逻辑B'
 
 
 def apply_for_mch_pay(pay):
@@ -290,7 +290,7 @@ def update_mch_pay_state(pay):
     if status == 'FAILED':
         current_app.logger.error(u'微信支付企业付款失败')
         apply_for_mch_pay(pay)
-    # TODO: 微信支付业务逻辑C
+    # TODO: 微信支付企业付款业务逻辑C
 
 
 def send_red_pack(pack):
@@ -370,4 +370,4 @@ def update_red_pack_state(pack):
     if status == 'FAILED':
         current_app.logger.error(u'微信支付发放红包失败')
         send_red_pack(pack)
-    # TODO: 微信支付业务逻辑D
+    # TODO: 微信支付现金红包业务逻辑D

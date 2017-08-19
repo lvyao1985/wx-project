@@ -6,7 +6,7 @@ from flask import current_app, request, g, abort
 
 from ...models import Admin
 from ...constants import ADMIN_TOKEN_TAG
-from utils.des import decrypt
+from utils.aes_util import decrypt
 
 
 def admin_authentication():

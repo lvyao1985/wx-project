@@ -6,7 +6,8 @@ pymysql
 peewee
 redis
 qiniu
-ipgetter
 requests
+pycrypto
+ipgetter
 xmltodict
 celery>=4.0,<5.0

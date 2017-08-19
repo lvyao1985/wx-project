@@ -1,7 +1,7 @@
 ## 系统环境变量设置
 
     FLASK_CONFIG [development|testing|production] (default: development)
-    DES_KEY (8 bytes)
+    AES_KEY_SEED
     CA_CERTS_PATH
     REDIS_HOST (default: 127.0.0.1)
     REDIS_PORT (default: 6379)

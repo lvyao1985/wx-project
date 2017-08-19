@@ -2,16 +2,19 @@
 
 import hashlib
 import urllib
+import base64
 
 from flask import current_app, request, url_for, redirect, make_response, jsonify
+from Crypto.Cipher import AES
 import xmltodict
 
 from . import bp_www_main
-from ...models import WXUser, WXPayOrder
+from ...models import WXUser, WXPayOrder, WXPayRefund
 from ...constants import WX_USER_COOKIE_KEY, WX_USER_LOGIN_VALID_DAYS
-from utils.des import encrypt
+from utils.aes_util import encrypt
+from utils.redis_util import redis_client
 from utils.qiniu_util import get_upload_token
-from utils.weixin_util import get_user_info_with_authorization, generate_pay_sign
+from utils.weixin_util import get_user_info, get_user_info_with_authorization, generate_pay_sign
 
 
 @bp_www_main.route('/extensions/qn/upload_token/', methods=['GET'])
@@ -90,6 +93,28 @@ def wx_api():
         try:
             message = xmltodict.parse(request.data)['xml']
             current_app.logger.info(message)
+            msg_type = message['MsgType']
+
+            # 获取微信用户基本信息
+            openid = message['FromUserName']
+            wx_user = WXUser.query_by_openid(openid)
+            if wx_user:
+                key = 'wx_user:%s:info' % wx_user.id
+                if redis_client.get(key) != 'off':
+                    redis_client.set(key, 'off')
+                    redis_client.expire(key, 28800)  # 每隔八小时更新微信用户基本信息
+                    info = get_user_info(current_app.config['WEIXIN'], openid)
+                    if info:
+                        wx_user.update_wx_user(**info)
+                    else:
+                        current_app.logger.error(u'微信用户基本信息获取失败')
+            else:
+                info = get_user_info(current_app.config['WEIXIN'], openid)
+                if info:
+                    wx_user = WXUser.create_wx_user(**info)
+                else:
+                    current_app.logger.error(u'微信用户基本信息获取失败')
+
             # TODO: 微信API业务逻辑
         except Exception, e:
             current_app.logger.error(e)
@@ -121,5 +146,39 @@ def wx_pay_notify():
             current_app.logger.info(request.data)
         else:
             wx_pay_order.update_notify_result(result)
-            # TODO: 微信支付业务逻辑A'
+            # TODO: 微信支付业务逻辑A
+    return make_response(template.render(return_code='SUCCESS'))
+
+
+@bp_www_main.route('/extensions/wx/refund/notify/', methods=['POST'])
+def wx_refund_notify():
+    """
+    （由微信访问）微信支付退款结果通知
+    :return:
+    """
+    template = current_app.jinja_env.get_template('weixin/pay/refund_notice_reply.xml')
+    try:
+        result = xmltodict.parse(request.data)['xml']
+        cipher_text = base64.b64decode(result['req_info'])
+        aes_key = hashlib.md5(current_app.config['WEIXIN']['pay_key']).hexdigest()
+        cipher = AES.new(aes_key)
+        plain_text = cipher.decrypt(cipher_text)
+        pad = plain_text[-1]
+        if pad != '>':
+            plain_text = plain_text.rstrip(pad)
+        info = xmltodict.parse(plain_text)['root']
+        out_refund_no = info['out_refund_no']
+    except Exception, e:
+        current_app.logger.error(e)
+        current_app.logger.info(request.data)
+        return make_response(template.render(return_code='FAIL', return_msg=e.message))
+
+    wx_pay_refund = WXPayRefund.query_by_out_refund_no(out_refund_no)
+    if wx_pay_refund and not wx_pay_refund.refund_status:
+        if wx_pay_refund.refund_fee != int(result['refund_fee']):
+            current_app.logger.error(u'微信支付退款结果通知退款金额不一致')
+            current_app.logger.info(request.data)
+        else:
+            wx_pay_refund.update_notify_result(info)
+            # TODO: 微信支付退款业务逻辑B
     return make_response(template.render(return_code='SUCCESS'))
