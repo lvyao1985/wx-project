@@ -29,7 +29,7 @@ def wx_user_authentication():
     if not g.user:
         return
 
-    key = 'wx_user:%s:info' % g.user.id
+    key = 'wx_user:%s:info' % g.user.openid
     if redis_client.get(key) != 'off':
         redis_client.set(key, 'off')
         redis_client.expire(key, 28800)  # 每隔八小时更新微信用户基本信息

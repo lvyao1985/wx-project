@@ -98,20 +98,18 @@ def wx_api():
             # 获取微信用户基本信息
             openid = message['FromUserName']
             wx_user = WXUser.query_by_openid(openid)
-            if wx_user:
-                key = 'wx_user:%s:info' % wx_user.id
-                if redis_client.get(key) != 'off':
-                    redis_client.set(key, 'off')
-                    redis_client.expire(key, 28800)  # 每隔八小时更新微信用户基本信息
-                    info = get_user_info(current_app.config['WEIXIN'], openid)
-                    if info:
-                        wx_user.update_wx_user(**info)
-                    else:
-                        current_app.logger.error(u'微信用户基本信息获取失败')
-            else:
+            key = 'wx_user:%s:info' % openid
+            if not wx_user or (msg_type == 'event' and message['Event'] in ['subscribe', 'unsubscribe']):
+                redis_client.delete(key)
+            if redis_client.get(key) != 'off':
+                redis_client.set(key, 'off')
+                redis_client.expire(key, 28800)  # 每隔八小时更新微信用户基本信息
                 info = get_user_info(current_app.config['WEIXIN'], openid)
                 if info:
-                    wx_user = WXUser.create_wx_user(**info)
+                    if wx_user:
+                        wx_user.update_wx_user(**info)
+                    else:
+                        wx_user = WXUser.create_wx_user(**info)
                 else:
                     current_app.logger.error(u'微信用户基本信息获取失败')
 
