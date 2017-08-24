@@ -316,11 +316,11 @@ class WXUser(BaseModel):
 
     @classmethod
     def _exclude_fields(cls):
-        return BaseModel._exclude_fields() | {'tagid_list'}
+        return BaseModel._exclude_fields() | {'subscribe_time', 'tagid_list'}
 
     @classmethod
     def _extra_attributes(cls):
-        return BaseModel._extra_attributes() | {'array_tagid_list'}
+        return BaseModel._extra_attributes() | {'iso_subscribe_time', 'array_tagid_list'}
 
     @classmethod
     def query_by_openid(cls, openid):
@@ -416,6 +416,9 @@ class WXUser(BaseModel):
 
         except Exception, e:
             current_app.logger.error(e)
+
+    def iso_subscribe_time(self):
+        return datetime.datetime.fromtimestamp(self.subscribe_time).isoformat() if self.subscribe_time else None
 
     def array_tagid_list(self):
         return map(int, self.tagid_list.split(',')) if self.tagid_list else []
