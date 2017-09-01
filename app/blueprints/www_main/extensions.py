@@ -173,7 +173,7 @@ def wx_refund_notify():
 
     wx_pay_refund = WXPayRefund.query_by_out_refund_no(out_refund_no)
     if wx_pay_refund and not wx_pay_refund.refund_status:
-        if wx_pay_refund.refund_fee != int(result['refund_fee']):
+        if wx_pay_refund.refund_fee != int(info['refund_fee']):
             current_app.logger.error(u'微信支付退款结果通知退款金额不一致')
             current_app.logger.info(request.data)
         else:
