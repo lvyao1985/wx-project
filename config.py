@@ -73,7 +73,8 @@ class Config(object):
         file_handler = RotatingFileHandler('backend.log', maxBytes=1024 * 1024 * 100, backupCount=10, encoding='utf-8')
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(
-            logging.Formatter(u'[%(asctime)s] - %(pathname)s (%(lineno)s) - [%(levelname)s] - %(message)s'))
+            logging.Formatter(u'[%(asctime)s] - %(pathname)s (%(lineno)s) - [%(levelname)s] - %(message)s')
+        )
         app.logger.addHandler(file_handler)
         app.logger.setLevel(logging.INFO)
 

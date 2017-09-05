@@ -19,4 +19,4 @@ bp_cms_api.before_request(before_api_request)
 bp_cms_api.before_request(admin_authentication)
 
 
-from . import views
+from . import v_admin

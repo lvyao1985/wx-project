@@ -23,7 +23,8 @@ def encrypt(text):
     remainder = len(text) % AES.block_size
     if remainder:
         text += _PAD * (AES.block_size - remainder)
-    return base64.b64encode(cipher.encrypt(text))
+    cipher_text = cipher.encrypt(text)
+    return base64.b64encode(cipher_text)
 
 
 def decrypt(text):
@@ -33,4 +34,5 @@ def decrypt(text):
     :return:
     """
     cipher = AES.new(_KEY, _MODE, _IV)
-    return cipher.decrypt(base64.b64decode(text)).rstrip(_PAD)
+    cipher_text = base64.b64decode(text)
+    return cipher.decrypt(cipher_text).rstrip(_PAD)

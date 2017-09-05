@@ -129,7 +129,7 @@ _(login_required)_
     GET  /api/current_user/
 
     响应数据：
-        user [object]:
+        wx_user [object]:
 
 ## Extensions
 
@@ -160,6 +160,13 @@ _(login_required)_
 
     错误码：
         1401, 1402, 1403, 1404
+
+**获取当前管理员详情**
+
+    GET  /api/current_admin/
+
+    响应数据：
+        admin [object]:
 
 **修改当前管理员密码**
 

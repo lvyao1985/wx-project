@@ -11,6 +11,7 @@ import xmltodict
 from . import bp_www_main
 from ...models import WXUser, WXPayOrder, WXPayRefund
 from ...constants import WX_USER_COOKIE_KEY, WX_USER_LOGIN_VALID_DAYS
+from ...services.weixin import query_order
 from utils.aes_util import encrypt
 from utils.redis_util import redis_client
 from utils.qiniu_util import get_upload_token
@@ -95,6 +96,9 @@ def wx_api():
             current_app.logger.info(message)
             msg_type = message['MsgType']
 
+            if msg_type == 'event' and message['Event'] in ['TEMPLATESENDJOBFINISH', 'MASSSENDJOBFINISH']:
+                return
+
             # 获取微信用户基本信息
             openid = message['FromUserName']
             wx_user = WXUser.query_by_openid(openid)
@@ -145,6 +149,10 @@ def wx_pay_notify():
         else:
             wx_pay_order.update_notify_result(result)
             # TODO: 微信支付业务逻辑A
+            if wx_pay_order.notify_result_code == 'SUCCESS':
+                pass
+            else:
+                current_app.logger.error(u'微信支付失败(wx_pay_order_id: %s)' % wx_pay_order.id)
     return make_response(template.render(return_code='SUCCESS'))
 
 
@@ -179,4 +187,8 @@ def wx_refund_notify():
         else:
             wx_pay_refund.update_notify_result(info)
             # TODO: 微信支付退款业务逻辑B
+            if wx_pay_refund.refund_status == 'SUCCESS':
+                query_order(wx_pay_refund.wx_pay_order)
+            else:
+                current_app.logger.error(u'微信支付退款失败(wx_pay_refund_id: %s)' % wx_pay_refund.id)
     return make_response(template.render(return_code='SUCCESS'))

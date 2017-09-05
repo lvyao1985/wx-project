@@ -301,7 +301,7 @@ def generate_qrcode_with_scene(wx, action, scene, expires=30):
     resp = requests.get(wx_url, params=params, verify=VERIFY)
     content_type = resp.headers.get('Content-Type')
     if content_type and content_type.startswith('image/'):
-        return resp.content
+        return resp.url, resp.content
 
 
 def generate_pay_sign(wx, data):

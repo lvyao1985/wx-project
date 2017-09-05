@@ -33,6 +33,18 @@ def login():
     return api_success_response(data)
 
 
+@bp_cms_api.route('/current_admin/', methods=['GET'])
+def get_current_admin():
+    """
+    获取当前管理员详情
+    :return:
+    """
+    data = {
+        'admin': g.admin.to_dict(g.fields)
+    }
+    return api_success_response(data)
+
+
 @bp_cms_api.route('/current_admin/password/', methods=['PUT'])
 def update_current_admin_password():
     """

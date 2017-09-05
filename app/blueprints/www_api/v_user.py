@@ -15,6 +15,6 @@ def get_current_user():
     :return:
     """
     data = {
-        'user': g.user.to_dict(g.fields)
+        'wx_user': g.user.to_dict(g.fields)
     }
     return api_success_response(data)
