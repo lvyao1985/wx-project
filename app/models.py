@@ -784,8 +784,12 @@ class WXMchPay(BaseModel):
     """
     CHECK_NAME_CHOICES = (
         ('NO_CHECK', u'不校验真实姓名'),
-        ('FORCE_CHECK', u'强校验真实姓名'),
-        ('OPTION_CHECK', u'针对已实名认证的用户才校验真实姓名')
+        ('FORCE_CHECK', u'强校验真实姓名')
+    )
+    STATUS_CHOICES = (
+        ('PROCESSING', u'处理中'),
+        ('SUCCESS', u'转账成功'),
+        ('FAILED', u'转账失败')
     )
     partner_trade_no = CharField(max_length=32, unique=True)
     openid = CharField()
@@ -802,7 +806,8 @@ class WXMchPay(BaseModel):
 
     query_result = TextField(null=True)  # 查询企业付款响应结果
     query_result_code = CharField(null=True)
-    status = CharField(null=True)
+    status = CharField(null=True, choices=STATUS_CHOICES)
+    reason = CharField(null=True)
 
     class Meta:
         db_table = 'wx_mch_pay'
@@ -843,8 +848,7 @@ class WXMchPay(BaseModel):
         """
         try:
             return cls.create(
-                partner_trade_no=generate_random_key(28, current_app.config['WEIXIN'].get('mch_id')
-                                                     + datetime.date.today().strftime('%Y%m%d'), 'd'),
+                partner_trade_no=generate_random_key(24, 'MP' + datetime.date.today().strftime('%Y%m%d'), 'd'),
                 openid=openid.strip(),
                 check_name=check_name.strip(),
                 amount=amount,
@@ -887,6 +891,7 @@ class WXMchPay(BaseModel):
             if self.query_result_code == 'SUCCESS':
                 self.payment_no = _nullable_strip(result.get('detail_id'))
                 self.status = _nullable_strip(result.get('status'))
+                self.reason = _nullable_strip(result.get('reason'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -905,6 +910,27 @@ class WXRedPack(BaseModel):
     """
     微信支付现金红包
     """
+    AMT_TYPE_CHOICES = (
+        ('ALL_RAND', u'全部随机'),
+    )
+    SCENE_ID_CHOICES = (
+        ('PRODUCT_1', u'商品促销'),
+        ('PRODUCT_2', u'抽奖'),
+        ('PRODUCT_3', u'虚拟物品兑奖'),
+        ('PRODUCT_4', u'企业内部福利'),
+        ('PRODUCT_5', u'渠道分润'),
+        ('PRODUCT_6', u'保险回馈'),
+        ('PRODUCT_7', u'彩票派奖'),
+        ('PRODUCT_8', u'税务刮奖')
+    )
+    STATUS_CHOICES = (
+        ('SENDING', u'发放中'),
+        ('SENT', u'已发放待领取'),
+        ('RECEIVED', u'已领取'),
+        ('RFUND_ING', u'退款中'),
+        ('REFUND', u'已退款'),
+        ('FAILED', u'发放失败')
+    )
     mch_billno = CharField(max_length=32, unique=True)
     send_name = CharField()
     re_openid = CharField()
@@ -913,9 +939,9 @@ class WXRedPack(BaseModel):
     wishing = CharField()
     act_name = CharField()
     remark = CharField()
-    amt_type = CharField(null=True)
+    amt_type = CharField(null=True, choices=AMT_TYPE_CHOICES)
     client_ip = CharField(null=True)
-    scene_id = CharField(null=True)
+    scene_id = CharField(null=True, choices=SCENE_ID_CHOICES)
     risk_info = CharField(null=True)
     consume_mch_id = CharField(null=True)
 
@@ -925,7 +951,8 @@ class WXRedPack(BaseModel):
 
     query_result = TextField(null=True)  # 查询红包记录响应结果
     query_result_code = CharField(null=True)
-    status = CharField(null=True)
+    status = CharField(null=True, choices=STATUS_CHOICES)
+    reason = CharField(null=True)
 
     class Meta:
         db_table = 'wx_red_pack'
@@ -972,8 +999,7 @@ class WXRedPack(BaseModel):
         """
         try:
             return cls.create(
-                mch_billno=generate_random_key(28, current_app.config['WEIXIN'].get('mch_id')
-                                               + datetime.date.today().strftime('%Y%m%d'), 'd'),
+                mch_billno=generate_random_key(24, 'RP' + datetime.date.today().strftime('%Y%m%d'), 'd'),
                 send_name=send_name.strip(),
                 re_openid=re_openid.strip(),
                 total_amount=total_amount,
@@ -1021,6 +1047,7 @@ class WXRedPack(BaseModel):
             if self.query_result_code == 'SUCCESS':
                 self.send_listid = _nullable_strip(result.get('detail_id'))
                 self.status = _nullable_strip(result.get('status'))
+                self.reason = _nullable_strip(result.get('reason'))
             self.update_time = datetime.datetime.now()
             self.save()
             return self
@@ -1035,4 +1062,4 @@ class WXRedPack(BaseModel):
         return eval(self.query_result) if self.query_result else {}
 
 
-models = [Admin, WXUser, WXPayOrder, WXPayRefund]
+models = [Admin, WXUser, WXPayOrder, WXPayRefund, WXMchPay, WXRedPack]

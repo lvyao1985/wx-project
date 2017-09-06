@@ -225,7 +225,7 @@ def apply_for_mch_pay(pay):
     :param pay:
     :return:
     """
-    if pay.status in ['SUCCESS', 'PROCESSING']:
+    if pay.status in ['PROCESSING', 'SUCCESS']:
         return
 
     wx = current_app.config['WEIXIN']
@@ -290,7 +290,7 @@ def update_mch_pay_state(pay):
     if status == 'FAILED':
         current_app.logger.error(u'微信支付企业付款失败')
         apply_for_mch_pay(pay)
-    # TODO: 微信支付企业付款业务逻辑C
+    # TODO: 微信支付企业付款业务逻辑C'
 
 
 def send_red_pack(pack):
@@ -303,15 +303,14 @@ def send_red_pack(pack):
         return
 
     wx = current_app.config['WEIXIN']
-    template = 'weixin/pay/red_pack.xml'
     if pack.total_num == 1:
         wx_url = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack'
-        params = pack.to_dict(only=('mch_billno', 'send_name', 're_openid', 'total_amount', 'total_num', 'wishing',
-                                    'client_ip', 'act_name', 'remark', 'scene_id', 'risk_info', 'consume_mch_id'))
     else:
         wx_url = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack'
-        params = pack.to_dict(only=('mch_billno', 'send_name', 're_openid', 'total_amount', 'total_num', 'amt_type',
-                                    'wishing', 'act_name', 'remark', 'scene_id', 'risk_info', 'consume_mch_id'))
+    template = 'weixin/pay/red_pack.xml'
+    params = pack.to_dict(only=('mch_billno', 'send_name', 're_openid', 'total_amount', 'total_num', 'amt_type',
+                                'wishing', 'client_ip', 'act_name', 'remark', 'scene_id', 'risk_info',
+                                'consume_mch_id'))
     params['nonce_str'] = generate_random_key(16)
     params['mch_id'] = wx['mch_id']
     params['wxappid'] = wx['app_id']
@@ -322,7 +321,8 @@ def send_red_pack(pack):
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
-        assert 'result_code' in result, result.get('return_msg')
+        sign = result.pop('sign')
+        assert sign == generate_pay_sign(wx, result), u'微信支付签名验证失败'
         pack.update_send_result(result)
     except Exception, e:
         current_app.logger.error(e)
@@ -352,7 +352,8 @@ def query_red_pack(pack):
     resp.encoding = 'utf-8'
     try:
         result = xmltodict.parse(resp.text)['xml']
-        assert 'result_code' in result, result.get('return_msg')
+        sign = result.pop('sign')
+        assert sign == generate_pay_sign(wx, result), u'微信支付签名验证失败'
         pack.update_query_result(result)
     except Exception, e:
         current_app.logger.error(e)
@@ -370,4 +371,4 @@ def update_red_pack_state(pack):
     if status == 'FAILED':
         current_app.logger.error(u'微信支付发放红包失败')
         send_red_pack(pack)
-    # TODO: 微信支付现金红包业务逻辑D
+    # TODO: 微信支付现金红包业务逻辑D'
