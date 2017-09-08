@@ -40,8 +40,7 @@ def get_access_token(wx):
     if not (access_token and expires_in):
         return
 
-    redis_client.set(key, access_token)
-    redis_client.expire(key, int(expires_in) - 600)  # 提前10分钟更新access_token
+    redis_client.set(key, access_token, ex=int(expires_in) - 600)  # 提前10分钟更新access_token
     return access_token
 
 
@@ -74,8 +73,7 @@ def get_jsapi_ticket(wx):
     if not (jsapi_ticket and expires_in):
         return
 
-    redis_client.set(key, jsapi_ticket)
-    redis_client.expire(key, int(expires_in) - 600)  # 提前10分钟更新jsapi_ticket
+    redis_client.set(key, jsapi_ticket, ex=int(expires_in) - 600)  # 提前10分钟更新jsapi_ticket
     return jsapi_ticket
 
 

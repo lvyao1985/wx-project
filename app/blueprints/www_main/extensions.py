@@ -106,8 +106,7 @@ def wx_api():
             if not wx_user or (msg_type == 'event' and message['Event'] in ['subscribe', 'unsubscribe']):
                 redis_client.delete(key)
             if redis_client.get(key) != 'off':
-                redis_client.set(key, 'off')
-                redis_client.expire(key, 28800)  # 每隔八小时更新微信用户基本信息
+                redis_client.set(key, 'off', ex=28800)  # 每隔八小时更新微信用户基本信息
                 info = get_user_info(current_app.config['WEIXIN'], openid)
                 if info:
                     if wx_user:
