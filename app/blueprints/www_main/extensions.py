@@ -4,7 +4,7 @@ import hashlib
 import urllib
 import base64
 
-from flask import current_app, request, url_for, redirect, make_response, jsonify
+from flask import current_app, request, url_for, redirect, make_response, jsonify, abort
 from Crypto.Cipher import AES
 import xmltodict
 
@@ -192,3 +192,32 @@ def wx_refund_notify():
             else:
                 current_app.logger.error(u'微信支付退款失败(wx_pay_refund_id: %s)' % wx_pay_refund.id)
     return make_response(template.render(return_code='SUCCESS'))
+
+
+@bp_www_main.route('/extensions/testing/wx/user/<wx_user_uuid>/login/', methods=['GET'])
+def wx_user_login_for_testing(wx_user_uuid):
+    """
+    微信用户登录（测试）
+    :param wx_user_uuid:
+    :return:
+    """
+    state = request.args.get('state')
+    wx_user = WXUser.query_by_uuid(wx_user_uuid)
+    if not wx_user:
+        abort(404)
+
+    resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
+    resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400)
+    return resp
+
+
+@bp_www_main.route('/extensions/testing/wx/user/logout/', methods=['GET'])
+def wx_user_logout_for_testing():
+    """
+    微信用户退出（测试）
+    :return:
+    """
+    state = request.args.get('state')
+    resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
+    resp.set_cookie(WX_USER_COOKIE_KEY, max_age=0)
+    return resp
