@@ -9,8 +9,7 @@ from Crypto.Cipher import AES
 
 _KEY = hashlib.md5(os.getenv('AES_KEY_SEED')).hexdigest()
 _MODE = AES.MODE_CBC
-_IV = '\0' * AES.block_size
-_PAD = '\0'
+_IV = _KEY[:AES.block_size]
 
 
 def encrypt(text):
@@ -20,9 +19,9 @@ def encrypt(text):
     :return:
     """
     cipher = AES.new(_KEY, _MODE, _IV)
-    remainder = len(text) % AES.block_size
-    if remainder:
-        text += _PAD * (AES.block_size - remainder)
+    pad_amount = AES.block_size - len(text) % AES.block_size
+    pad = chr(pad_amount)
+    text += pad * pad_amount
     cipher_text = cipher.encrypt(text)
     return base64.b64encode(cipher_text)
 
@@ -35,4 +34,7 @@ def decrypt(text):
     """
     cipher = AES.new(_KEY, _MODE, _IV)
     cipher_text = base64.b64decode(text)
-    return cipher.decrypt(cipher_text).rstrip(_PAD)
+    plain_text = cipher.decrypt(cipher_text)
+    pad = plain_text[-1]
+    pad_amount = ord(pad)
+    return plain_text[:-pad_amount]

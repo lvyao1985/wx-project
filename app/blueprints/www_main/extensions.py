@@ -168,9 +168,7 @@ def wx_refund_notify():
         aes_key = hashlib.md5(current_app.config['WEIXIN']['pay_key']).hexdigest()
         cipher = AES.new(aes_key)
         plain_text = cipher.decrypt(cipher_text)
-        pad = plain_text[-1]
-        if pad != '>':
-            plain_text = plain_text.rstrip(pad)
+        plain_text = plain_text[:-ord(plain_text[-1])]
         info = xmltodict.parse(plain_text)['root']
         out_refund_no = info['out_refund_no']
     except Exception, e:
