@@ -32,12 +32,12 @@ def list_objects(model, mark='objects'):
     return api_success_response(data)
 
 
-def get_object(_id, _uuid, model, mark='object'):
+def get_object(model, _id=None, _uuid=None, mark='object'):
     """
     获取单个对象
+    :param model:
     :param _id:
     :param _uuid:
-    :param model:
     :param mark:
     :return:
     """
@@ -50,12 +50,12 @@ def get_object(_id, _uuid, model, mark='object'):
     return api_success_response(data)
 
 
-def update_object_weight(_id, _uuid, model, mark='object'):
+def update_object_weight(model, _id=None, _uuid=None, mark='object'):
     """
     修改对象权重
+    :param model:
     :param _id:
     :param _uuid:
-    :param model:
     :param mark:
     :return:
     """
@@ -71,12 +71,12 @@ def update_object_weight(_id, _uuid, model, mark='object'):
     return api_success_response(data)
 
 
-def delete_object(_id, _uuid, model):
+def delete_object(model, _id=None, _uuid=None):
     """
     删除单个对象
+    :param model:
     :param _id:
     :param _uuid:
-    :param model:
     :return:
     """
     obj = model.query_by_id(_id) or model.query_by_uuid(_uuid)
