@@ -52,19 +52,17 @@ def wx_user_login():
     """
     code, state = map(request.args.get, ('code', 'state'))
     resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
-    if not code:
+    try:
+        assert code, u'微信网页授权：code获取失败'
+        info = get_user_info_with_authorization(current_app.config['WEIXIN'], code)
+        assert info, u'微信网页授权：微信用户基本信息获取失败'
+        wx_user = WXUser.query_by_openid(info['openid']) or WXUser.create_wx_user(**info)
+        assert wx_user, u'微信网页授权：微信用户查询或创建失败'
+        resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400 * WX_USER_LOGIN_VALID_DAYS)
+    except Exception, e:
+        current_app.logger.error(e)
+    finally:
         return resp
-
-    info = get_user_info_with_authorization(current_app.config['WEIXIN'], code)
-    if not info:
-        return resp
-
-    wx_user = WXUser.query_by_openid(info['openid']) or WXUser.create_wx_user(**info)
-    if not wx_user:
-        return resp
-
-    resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400 * WX_USER_LOGIN_VALID_DAYS)
-    return resp
 
 
 @bp_www_main.route('/extensions/wx/api/', methods=['GET', 'POST'])
