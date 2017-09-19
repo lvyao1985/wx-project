@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import datetime
 from uuid import uuid1
+import datetime
 
 from flask import current_app
 from peewee import *

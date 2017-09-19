@@ -184,6 +184,31 @@ def get_temp_image_media(wx, media_id):
         return resp.content
 
 
+def upload_temp_media(wx, media_type, file_name, file_data, content_type):
+    """
+    上传微信临时素材
+    :param wx: [dict]
+    :param media_type: 'image' - 图片，'voice' - 语音，'video' - 视频，'thumb' - 缩略图
+    :param file_name:
+    :param file_data:
+    :param content_type:
+    :return:
+    """
+    access_token = get_access_token(wx)
+    if not access_token:
+        return
+
+    wx_url = 'https://api.weixin.qq.com/cgi-bin/media/upload'
+    params = {
+        'access_token': access_token,
+        'type': media_type
+    }
+    files = {
+        'media': (file_name, file_data, content_type)
+    }
+    return requests.post(wx_url, params=params, files=files, verify=VERIFY).json().get('media_id')
+
+
 def send_custom_message(wx, openid, msg_type, msg_data):
     """
     发送微信客服消息
@@ -288,8 +313,8 @@ def generate_qrcode_with_scene(wx, action, scene, expires=30):
     if not action.startswith('QR_LIMIT_'):
         data['expire_seconds'] = int(expires)
     resp_json = requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
-    ticket = resp_json.get('ticket')
-    if not ticket:
+    url, ticket = map(resp_json.get, ('url', 'ticket'))
+    if not (url and ticket):
         return
 
     wx_url = 'https://mp.weixin.qq.com/cgi-bin/showqrcode'
@@ -299,7 +324,7 @@ def generate_qrcode_with_scene(wx, action, scene, expires=30):
     resp = requests.get(wx_url, params=params, verify=VERIFY)
     content_type = resp.headers.get('Content-Type')
     if content_type and content_type.startswith('image/'):
-        return resp.url, resp.content
+        return url, resp.url, resp.content
 
 
 def generate_pay_sign(wx, data):
