@@ -72,36 +72,40 @@ def wx_api():
     :return:
     """
     signature, timestamp, nonce = map(request.args.get, ('signature', 'timestamp', 'nonce'))
+    resp = 'success'
     if not all((signature, timestamp, nonce)):
         current_app.logger.error(u'微信API验证参数不完整')
-        return make_response('')
+        return make_response(resp)
 
     items = [current_app.config['WEIXIN']['token'], timestamp, nonce]
     items.sort()
     hashcode = hashlib.sha1(''.join(items)).hexdigest()
     if hashcode != signature:
         current_app.logger.error(u'微信API验证失败')
-        return make_response('')
+        return make_response(resp)
 
     if request.method == 'GET':
         current_app.logger.info(u'微信API验证成功')
         return make_response(request.args.get('echostr', ''))
 
     if request.method == 'POST':
-        xml = ''
         try:
             message = xmltodict.parse(request.data)['xml']
             current_app.logger.info(message)
-            msg_type = message['MsgType']
+            openid, msg_type, event = map(message.get, ('FromUserName', 'MsgType', 'Event'))
 
-            if msg_type == 'event' and message['Event'] in ['TEMPLATESENDJOBFINISH', 'MASSSENDJOBFINISH']:
+            # 模板消息及群发消息结果的事件推送
+            if msg_type == 'event' and event in ['TEMPLATESENDJOBFINISH', 'MASSSENDJOBFINISH']:
+                return
+
+            # 用户取消关注的事件推送
+            wx_user = WXUser.query_by_openid(openid)
+            if not wx_user and msg_type == 'event' and event == 'unsubscribe':
                 return
 
             # 获取微信用户基本信息
-            openid = message['FromUserName']
-            wx_user = WXUser.query_by_openid(openid)
             key = 'wx_user:%s:info' % openid
-            if not wx_user or (msg_type == 'event' and message['Event'] in ['subscribe', 'unsubscribe']):
+            if not wx_user or (msg_type == 'event' and event in ['subscribe', 'unsubscribe']):
                 redis_client.delete(key)
             if redis_client.get(key) != 'off':
                 redis_client.set(key, 'off', ex=28800)  # 每隔八小时更新微信用户基本信息
@@ -118,7 +122,7 @@ def wx_api():
         except Exception, e:
             current_app.logger.error(e)
         finally:
-            return make_response(xml)
+            return make_response(resp)
 
 
 @bp_www_main.route('/extensions/wx/pay/notify/', methods=['POST'])
