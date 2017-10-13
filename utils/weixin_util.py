@@ -77,6 +77,39 @@ def get_jsapi_ticket(wx):
     return jsapi_ticket
 
 
+def get_card_api_ticket(wx):
+    """
+    获取微信卡券api_ticket
+    :param wx: [dict]
+    :return:
+    """
+    app_id, app_secret = map(wx.get, ('app_id', 'app_secret'))
+    if not (app_id and app_secret):
+        return
+
+    key = 'wx:%s:card_api_ticket' % app_id
+    card_api_ticket = redis_client.get(key)
+    if card_api_ticket:
+        return card_api_ticket
+
+    access_token = get_access_token(wx)
+    if not access_token:
+        return
+
+    wx_url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket'
+    params = {
+        'access_token': access_token,
+        'type': 'wx_card'
+    }
+    resp_json = requests.get(wx_url, params=params, verify=VERIFY).json()
+    card_api_ticket, expires_in = map(resp_json.get, ('ticket', 'expires_in'))
+    if not (card_api_ticket and expires_in):
+        return
+
+    redis_client.set(key, card_api_ticket, ex=int(expires_in) - 600)  # 提前10分钟更新card_api_ticket
+    return card_api_ticket
+
+
 def get_user_info(wx, openid):
     """
     获取微信用户基本信息
@@ -286,7 +319,7 @@ def create_menu(wx, buttons):
     return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json()
 
 
-def generate_qrcode_with_scene(wx, action, scene, expires=30):
+def generate_qrcode_with_scene(wx, action, scene, expires=60):
     """
     生成微信带参数的二维码
     :param wx: [dict]

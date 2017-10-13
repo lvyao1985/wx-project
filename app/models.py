@@ -170,6 +170,20 @@ class BaseModel(Model):
         except Exception, e:
             current_app.logger.error(e)
 
+    def optionally_save(self):
+        """
+        如果数值有变动，修改更新时间并持久化到数据库
+        :return:
+        """
+        try:
+            if self.modified_fields():
+                self.update_time = datetime.datetime.now()
+                self.save()
+            return self
+
+        except Exception, e:
+            current_app.logger.error(e)
+
     def change_weight(self, weight):
         """
         修改排序权重
@@ -409,10 +423,7 @@ class WXUser(BaseModel):
                 self.language = _nullable_strip(language)
                 self.remark = _nullable_strip(remark)
                 self.tagid_list = ','.join(map(str, tagid_list)) if tagid_list else None
-            if self.modified_fields():
-                self.update_time = datetime.datetime.now()
-                self.save()
-            return self
+            return self.optionally_save()
 
         except Exception, e:
             current_app.logger.error(e)

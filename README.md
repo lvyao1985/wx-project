@@ -176,6 +176,7 @@ _(login_required)_
         1401, 1402, 1403, 1404
 
 **获取当前管理员详情**
+_(login_required)_
 
     GET  /api/current_admin/
 
@@ -183,6 +184,7 @@ _(login_required)_
         admin [object]:
 
 **修改当前管理员密码**
+_(login_required)_
 
     PUT  /api/current_admin/password/
 
