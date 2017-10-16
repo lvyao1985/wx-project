@@ -10,7 +10,7 @@ import xmltodict
 
 from . import bp_www_main
 from ...models import WXUser, WXPayOrder, WXPayRefund
-from ...constants import WX_USER_COOKIE_KEY, WX_USER_LOGIN_VALID_DAYS
+from ...constants import WX_USER_COOKIE_KEY, WX_USER_COOKIE_VALID_DAYS
 from ...services.weixin import query_order
 from utils.aes_util import encrypt
 from utils.redis_util import redis_client
@@ -58,7 +58,7 @@ def wx_user_login():
         assert info, u'微信网页授权：微信用户基本信息获取失败'
         wx_user = WXUser.query_by_openid(info['openid']) or WXUser.create_wx_user(**info)
         assert wx_user, u'微信网页授权：微信用户查询或创建失败'
-        resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400 * WX_USER_LOGIN_VALID_DAYS)
+        resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400 * WX_USER_COOKIE_VALID_DAYS)
     except Exception, e:
         current_app.logger.error(e)
     finally:
