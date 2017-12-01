@@ -533,7 +533,7 @@ def decrypt_card_code(wx, encrypt_code):
     return requests.post(wx_url, params=params, data=json.dumps(data, ensure_ascii=False), verify=VERIFY).json().get('code')
 
 
-def get_card_code(wx, code, card_id=None, check_consume=True):
+def get_card_code(wx, code, card_id=None, check_consume=False):
     """
     查询微信卡券code
     :param wx: [dict]
