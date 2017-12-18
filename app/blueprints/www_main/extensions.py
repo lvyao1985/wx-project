@@ -38,7 +38,7 @@ def wx_user_authorize():
     """
     app_id = current_app.config['WEIXIN']['app_id']
     redirect_uri = urllib.quote_plus(url_for('.wx_user_login', _external=True))
-    state = urllib.quote_plus(request.args.get('state') or '/')
+    state = request.args.get('state') or urllib.quote_plus('/')
     wx_url = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code' \
              '&scope=snsapi_userinfo&state=%s#wechat_redirect' % (app_id, redirect_uri, state)
     return redirect(wx_url)
@@ -193,7 +193,7 @@ def wx_refund_notify():
     return make_response(template.render(return_code='SUCCESS'))
 
 
-@bp_www_main.route('/extensions/testing/wx/user/<wx_user_uuid>/login/', methods=['GET'])
+@bp_www_main.route('/extensions/testing/wx/user/<uuid:wx_user_uuid>/login/', methods=['GET'])
 def wx_user_login_for_testing(wx_user_uuid):
     """
     微信用户登录（测试）
