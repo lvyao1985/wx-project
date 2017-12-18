@@ -38,7 +38,7 @@ def wx_user_authorize():
     """
     app_id = current_app.config['WEIXIN']['app_id']
     redirect_uri = urllib.quote_plus(url_for('.wx_user_login', _external=True))
-    state = request.args.get('state') or urllib.quote_plus('/')
+    state = urllib.quote_plus(request.args.get('state') or '/')
     wx_url = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=%s&redirect_uri=%s&response_type=code' \
              '&scope=snsapi_userinfo&state=%s#wechat_redirect' % (app_id, redirect_uri, state)
     return redirect(wx_url)
@@ -51,7 +51,7 @@ def wx_user_login():
     :return:
     """
     code, state = map(request.args.get, ('code', 'state'))
-    resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
+    resp = make_response(redirect(state or '/'))
     try:
         assert code, u'微信网页授权：code获取失败'
         info = get_user_info_with_authorization(current_app.config['WEIXIN'], code)
@@ -205,7 +205,7 @@ def wx_user_login_for_testing(wx_user_uuid):
     if not wx_user:
         abort(404)
 
-    resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
+    resp = make_response(redirect(state or '/'))
     resp.set_cookie(WX_USER_COOKIE_KEY, value=encrypt(wx_user.uuid.hex), max_age=86400)
     return resp
 
@@ -217,6 +217,6 @@ def wx_user_logout_for_testing():
     :return:
     """
     state = request.args.get('state')
-    resp = make_response(redirect(urllib.unquote_plus(state) if state else '/'))
+    resp = make_response(redirect(state or '/'))
     resp.set_cookie(WX_USER_COOKIE_KEY, max_age=0)
     return resp
